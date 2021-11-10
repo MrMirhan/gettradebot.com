@@ -9,12 +9,7 @@ def webThread():
     app = create_app()
     app.run(host=config.IP, port=config.PORT, debug=config.DEBUG)
 
-def loggs():
-    from logging_start import logging_start as lstart
-    lstart()
-
 def start():
-    loggs()
     logger=logging.getLogger()
     logger.info("Current branch: {} & Github branch: {}".format(updater.currentBranch, updater.repoBranch))
     logger.info("Current version: {} & Github version: {}".format(updater.currentVersion, updater.repoVersion))
