@@ -1,0 +1,11 @@
+<html>
+<body>
+  {% if array %}
+    {% for element in array%}
+      <h2>Hello {{ element.name }}.</h2>
+    {% endfor %}
+  {% else %}
+    <h2>Hello.</h2>
+  {% endif %}
+ </body>
+</html>
