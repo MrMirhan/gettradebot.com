@@ -5,5 +5,4 @@ def create_app():
     @app.route('/')
     def main_page():
         return render_template('index.html', name="Mirhan", array=[{"name":"Matilda"}, {"name": "Selim"}])
-
     return app
