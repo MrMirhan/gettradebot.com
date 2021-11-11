@@ -1,21 +1,23 @@
 #from src import config
 from github import Github
 import logging
-logger = logging.getLogger()
 from zipfile import ZipFile
-import requests
+import requests, sys
+from datetime import datetime
 import database as db
+from threading import Thread
 from requests.auth import HTTPBasicAuth
 from multiprocessing import Process
 import os, shutil, time
-from src import main
-
+import readLogs as rl
+logger=()
 class UpdateBot():
     def __init__(self):
         self.warnedBranch = 0
         self.warnedVersion = 0
         self.con = db.con
         self.config = db.config
+        self.mainThread = list()
         self.check()
 
     def check(self):
@@ -63,19 +65,35 @@ class UpdateBot():
     def purge(self):
        shutil.rmtree("./src")
 
+    def startMain(self, logg):
+        try:
+            if sys.modules['src.main']:
+                del sys.modules['main']
+                from src import main
+            else:
+                from src import main
+        except:
+            from src import main
+        timeNow = round(datetime.now().timestamp())
+        p = Process(target=main.start, daemon=True, args=(logg, ), name=f"{str(timeNow)}")
+        self.mainThread.append(p)
+        p.start()
+        p.join()
+        return timeNow
+
 def loggs():
+    global logger
     from logging_start import logging_start as lstart
     lstart()
+    logger = logging.getLogger()
 
 if __name__ == "__main__":
     loggs()
+    Process(target=rl.start, daemon=True, args=( )).start()
     update = UpdateBot()
     logger.info("Current branch: {} & Github branch: {}".format(update.currentBranch, update.repoBranch))
     logger.info("Current version: {} & Github version: {}".format(update.currentVersion, update.repoVersion))
     db.dbStr("DENEME", {"Test": "TEXT", "SUM": "INTEGER", "VER":"TEXT"})
     db.dbInsert("DENEME", {"Test": "xd", "SUM": 1, "VER": "0.0.2"})
-    p = Process(target=main.start, daemon=True, args=( ))
-    p.start()
-    p.join()
-    time.sleep(20)
-    p.terminate()
+    mainId = update.startMain(logger)
+    logger.info("Main Thread ID:" + mainId)

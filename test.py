@@ -1,22 +1,4 @@
-xd = list()
-xd.append("test")
-xd.append("test")
-xd.append("test")
-xd.append("test")
-xd.append("test")
+import requests
 
-print(xd.keys)
-
-x = 0
-listt = "("
-while True:
-    if x == len(xd):
-        break
-    if x+1 == len(xd):
-        listt+=str(xd[x])
-    else:
-        listt+=str(xd[x])+", "
-    print(xd[x], x)
-    x+=1
-listt+=")"
-print(listt)
+r = requests.get("http://185.114.21.56", json={"xd": "test"})
+print(r)

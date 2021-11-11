@@ -1,7 +1,7 @@
 import logging
 import datetime
 import os
-
+logger = logging.getLogger()
 def logging_start():
     date = str(datetime.datetime.now())
     todayDate = str(date.split(" ")[0])

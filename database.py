@@ -1,8 +1,6 @@
 import sqlite3 as sl
 import logging
-
 logger = logging.getLogger()
-
 con = sl.connect('getdb.db')
 logger.info("Database connected with SQLite3")
 config = list()
