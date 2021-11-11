@@ -5,6 +5,7 @@ xd.append("test")
 xd.append("test")
 xd.append("test")
 
+print(xd.keys)
 
 x = 0
 listt = "("
