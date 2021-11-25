@@ -1,4 +1,3 @@
-#from src import config
 from github import Github
 import logging
 from zipfile import ZipFile
@@ -9,8 +8,7 @@ from threading import Thread
 from requests.auth import HTTPBasicAuth
 from multiprocessing import Process
 import os, shutil, time
-import readLogs as rl
-logger=()
+logger = logging.getLogger()
 class UpdateBot():
     def __init__(self):
         self.warnedBranch = 0
@@ -61,39 +59,3 @@ class UpdateBot():
                 logger.info("Current branch: {} & Github branch: {}".format(self.currentBranch, self.repoBranch))
                 logger.info("Current version: {} & Github version: {}".format(self.currentVersion, self.repoVersion))
                 self.warnedVersion = 0
-        
-    def purge(self):
-       shutil.rmtree("./src")
-
-    def startMain(self, logg):
-        try:
-            if sys.modules['src.main']:
-                del sys.modules['main']
-                from src import main
-            else:
-                from src import main
-        except:
-            from src import main
-        timeNow = round(datetime.now().timestamp())
-        p = Process(target=main.start, daemon=True, args=(logg, ), name=f"{str(timeNow)}")
-        self.mainThread.append(p)
-        p.start()
-        p.join()
-        return timeNow
-
-def loggs():
-    global logger
-    from logging_start import logging_start as lstart
-    lstart()
-    logger = logging.getLogger()
-
-if __name__ == "__main__":
-    loggs()
-    Process(target=rl.start, daemon=True, args=( )).start()
-    update = UpdateBot()
-    logger.info("Current branch: {} & Github branch: {}".format(update.currentBranch, update.repoBranch))
-    logger.info("Current version: {} & Github version: {}".format(update.currentVersion, update.repoVersion))
-    db.dbStr("DENEME", {"Test": "TEXT", "SUM": "INTEGER", "VER":"TEXT"})
-    db.dbInsert("DENEME", {"Test": "xd", "SUM": 1, "VER": "0.0.2"})
-    mainId = update.startMain(logger)
-    logger.info("Main Thread ID:" + mainId)

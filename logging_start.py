@@ -3,6 +3,7 @@ import datetime
 import os
 logger = logging.getLogger()
 def logging_start():
+    global logger
     date = str(datetime.datetime.now())
     todayDate = str(date.split(" ")[0])
     nowTime = str(date.split(" ")[1]).split(":")
