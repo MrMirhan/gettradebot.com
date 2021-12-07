@@ -1,1 +1,14 @@
 flask
+pysqlite3
+datetime
+pygithub
+requests
+names
+aiogram
+pandas
+python-binance
+numpy
+unicorn-fy
+unicorn-binance-websocket-api
+pandas-ta
+TA-Lib
