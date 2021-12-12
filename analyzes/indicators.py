@@ -1,3 +1,4 @@
+from threading import Thread
 from binance.client import Client
 from binance.enums import *
 from .strategy import Strategy
@@ -5,6 +6,7 @@ import logging
 import json
 import math
 import os
+import multiprocessing
 from apscheduler.schedulers.background import BackgroundScheduler
 import numpy as np
 import pandas as pd
@@ -477,18 +479,35 @@ Date: {str(datetime.fromtimestamp(int(pos['last_updated_at'])))}
                         with con:
                             con.execute(f"""
                             DELETE FROM positions WHERE symbol='{symbol}' AND interval='{str(kline['interval'])}';
-                            """)
-            totalpos = [pos for pos in activePositions if pos['symbol'] == str(symbol) and str(pos['interval']) == str(kline['interval'])]
-    
+                            """)    
 
-def start(confirmSell=2, confirmBuy=2):
+def whileCheck(unicorn_fied_stream_data, kline, confirmSell=2, confirmBuy=2):
     global coinBudgets, activePositions, pastPositions, length, mult, length_KC, mult_KC
-    scheduler.start()
-    ubwa = BinanceWebSocketApiManager(exchange="binance.com")
+    symbol = (unicorn_fied_stream_data['symbol']).upper()
+    kline = {x: kline[x] for x in kline if x == "symbol" or x == "interval" or x == "open_price" or x == "close_price" or x == "high_price" or x == "low_price" or x == "base_volume" or x == "is_closed"}
+    closen = kline['close_price']
+    Thread(target=poschecker, args=(symbol, closen, kline, )).start()
+    if kline['is_closed'] == True:
+        Thread(target=coinCheck, args=(kline, symbol, confirmSell, confirmBuy, closen, )).start()
+
+def whileLoopStream(stream, coinList, id, confirmSell=2, confirmBuy=2):
+    logger.info("Started to check " + str(len(coinList)) + " coins.\n Process ID: " + str(os.getpid()))
+    ubwa = stream
+    while True:
+        oldest_data_from_stream_buffer = ubwa.pop_stream_data_from_stream_buffer()
+        if oldest_data_from_stream_buffer:
+            unicorn_fied_stream_data = UnicornFy.binance_com_websocket(oldest_data_from_stream_buffer)
+            try:
+                kline = unicorn_fied_stream_data['kline']
+                whileCheck(unicorn_fied_stream_data, kline, confirmSell, confirmBuy)
+            except:
+                pass
+                
+def main(totalBudget=12000, confirmSell=2, confirmBuy=2):
+    global markets
+    con = sl.connect(os.path.abspath(os.path.join(os.path.dirname(__file__),".."))+'/getdb.db')
+    logger.info("Started to checking coins. Total budget: {}".format(totalBudget))
     channels = ['kline_1d', 'kline_4h', 'kline_1h', 'kline_30m', 'kline_15m', 'kline_5m']
-    ubwa.create_stream(channels, markets, "tradebot")
-    totalBudget = 12000
-    logger.info("Started to checking coins. Total budget: ".format(totalBudget))
     with con:
         for row in con.execute('SELECT * FROM positions'):
             rowpos = {'symbol': row[1], 'interval': row[2], 'entry_price': row[3], 'mark_price': row[4], 'side': row[5], 'margin': row[6], 'cost': row[7], 'size': row[8], 'pnl': row[9], 'roi': row[10], 'take_profit': row[10], 'stop_loss': row[11], 'close_loss': row[12], 'created_at': row[13], 'last_updated_ad': row[14]}
@@ -501,19 +520,20 @@ def start(confirmSell=2, confirmBuy=2):
         coinBudgets.append({'symbol': sym, 'budget': bpc, 'interval': '30m'})
         coinBudgets.append({'symbol': sym, 'budget': bpc, 'interval': '15m'})
         coinBudgets.append({'symbol': sym, 'budget': bpc, 'interval': '5m'})
-    sendTelegram("-1001589066721", "STARTING BUDGET: $12.000")
+    sendTelegram("-1001589066721", "STARTING BUDGET: $"+ str(totalBudget))
+    marketListeners = np.array_split(markets, 5)
+    x = 0
+    for markets in marketListeners:
+        marketss = list(markets)
+        ubwa = BinanceWebSocketApiManager(exchange="binance.com")
+        stream = ubwa.create_stream(channels, marketss, "tradebot #"+str(x))
+        Thread(target=whileLoopStream, args=(stream, marketss, x, confirmSell, confirmBuy, ))
+        x+=1
+        time.sleep(0.5)
     while True:
-        oldest_data_from_stream_buffer = ubwa.pop_stream_data_from_stream_buffer()
-        if oldest_data_from_stream_buffer:
-            unicorn_fied_stream_data = UnicornFy.binance_com_websocket(oldest_data_from_stream_buffer)
-            try:
-                kline = unicorn_fied_stream_data['kline']
-            except:
-                continue
-            symbol = (unicorn_fied_stream_data['symbol']).upper()
-            kline = {x: kline[x] for x in kline if x == "symbol" or x == "interval" or x == "open_price" or x == "close_price" or x == "high_price" or x == "low_price" or x == "base_volume" or x == "is_closed"}
-            totalpos = [pos for pos in activePositions if pos['symbol'] == str(symbol) and str(pos['interval']) == str(kline['interval'])]
-            closen = kline['close_price']
-            scheduler.add_job(func=poschecker, args =[symbol, closen, kline], trigger=None)
-            if kline['is_closed'] == True:
-                scheduler.add_job(func=coinCheck, args=[kline, symbol, confirmSell, confirmBuy, closen], trigger=None)
+        continue
+    
+def start(confirmSell=2, confirmBuy=2):
+    global coinBudgets, activePositions, pastPositions, length, mult, length_KC, mult_KC
+    scheduler.start()
+    main(12000, 2, 2)
