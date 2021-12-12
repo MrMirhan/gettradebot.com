@@ -523,9 +523,9 @@ def main(totalBudget=12000, confirmSell=2, confirmBuy=2):
     sendTelegram("-1001589066721", "STARTING BUDGET: $"+ str(totalBudget))
     marketListeners = np.array_split(markets, 5)
     x = 0
+    ubwa = BinanceWebSocketApiManager(exchange="binance.com")
     for markets in marketListeners:
         marketss = list(markets)
-        ubwa = BinanceWebSocketApiManager(exchange="binance.com")
         stream = ubwa.create_stream(channels, marketss, "tradebot #"+str(x))
         Thread(target=whileLoopStream, args=(stream, marketss, x, confirmSell, confirmBuy, ))
         x+=1
